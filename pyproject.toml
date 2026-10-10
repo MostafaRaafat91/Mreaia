@@ -8,10 +8,14 @@ version = "1.0.0"
 description = "Hardware-Locked, Exfiltration-Proof Blueprint Distillation for Local LLMs"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
+license = { text = "Mreaia Source-Available Non-Commercial License" }
 dependencies = [
     "cryptography>=42.0.0",
 ]
 
 [project.scripts]
 mreaia = "mreaia_core:main"
+ask-mreaia = "ask_mreaia:main"
+
+[tool.setuptools]
+py-modules = ["mreaia_core", "ask_mreaia"]
