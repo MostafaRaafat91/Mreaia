@@ -186,6 +186,9 @@ class FileContentRouter:
         elif ext in [".mp4", ".mkv", ".mp3", ".jpg", ".png"] or sample.startswith(b"\x89PNG") or sample.startswith(b"\xff\xd8"):
             category = "media_asset"
             blueprint = cls._extract_media(sample, file_size)
+        elif ext in [".csv", ".tsv"]:
+            category = "delimited_tabular"
+            blueprint = cls._extract_tabular(sample, file_size)
         else:
             category = "enterprise_structured_binary"
             blueprint = cls._extract_structured_binary(sample, file_size)
@@ -240,6 +243,22 @@ class FileContentRouter:
                 {"type": "audio", "codec": "aac", "channels": 6, "sample_rate": 48000},
             ],
             "container_size_mb": round(size / (1024 * 1024), 2),
+        }
+
+    @staticmethod
+    def _extract_tabular(sample: bytes, size: int) -> Dict[str, Any]:
+        text_sample = sample.decode("utf-8", errors="ignore")
+        lines = [line.strip() for line in text_sample.split("\n") if line.strip()]
+        header_line = lines[0] if lines else ""
+        headers = [h.strip().strip('"').strip("'") for h in header_line.split(",") if h.strip()]
+        sample_rows = [line.split(",") for line in lines[1:4]]
+        return {
+            "architecture": "DELIMITED_TABULAR_DATASET",
+            "format": "CSV_TABULAR",
+            "column_count": len(headers),
+            "columns": headers,
+            "sample_rows_preview": sample_rows,
+            "estimated_total_rows": max(1, len(lines) if len(sample) >= size else int(size / max(len(header_line), 1))),
         }
 
     @staticmethod
