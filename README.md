@@ -81,7 +81,7 @@ flowchart TD
 
 ### 1. Clone & Setup Environment
 ```bash
-git clone https://github.com/your-username/Mreaia.git
+git clone https://github.com/MostafaRaafat91/Mreaia.git
 cd Mreaia
 
 python3 -m venv .venv
