@@ -183,9 +183,9 @@ class FileContentRouter:
         elif ext in [".sql", ".sqlite", ".db"] or b"CREATE TABLE" in sample or b"SQLite format" in sample:
             category = "sql_schema"
             blueprint = cls._extract_sql(sample, file_size)
-        elif ext in [".mp4", ".mkv", ".mp3", ".jpg", ".png"] or sample.startswith(b"\x89PNG") or sample.startswith(b"\xff\xd8"):
+        elif ext in [".mp4", ".mkv", ".mp3", ".jpg", ".png", ".mov", ".webm"] or sample.startswith(b"\x89PNG") or sample.startswith(b"\xff\xd8") or b"ftyp" in sample[:16]:
             category = "media_asset"
-            blueprint = cls._extract_media(sample, file_size)
+            blueprint = cls._extract_media(sample, file_size, file_path=file_path)
         elif ext in [".csv", ".tsv"]:
             category = "delimited_tabular"
             blueprint = cls._extract_tabular(sample, file_size)
@@ -235,14 +235,48 @@ class FileContentRouter:
         }
 
     @staticmethod
-    def _extract_media(sample: bytes, size: int) -> Dict[str, Any]:
+    def _extract_media(sample: bytes, size: int, file_path: Optional[str] = None) -> Dict[str, Any]:
+        duration_s = None
+        width = None
+        height = None
+        codecs = []
+
+        if file_path and platform.system() == "Darwin":
+            try:
+                cmd = f'mdls -name kMDItemPixelWidth -name kMDItemPixelHeight -name kMDItemDurationSeconds -name kMDItemCodecs "{file_path}"'
+                out = subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL).decode("utf-8")
+                for line in out.splitlines():
+                    if "kMDItemDurationSeconds" in line and "=" in line:
+                        val = line.split("=")[1].strip()
+                        if val != "(null)":
+                            duration_s = round(float(val), 2)
+                    elif "kMDItemPixelWidth" in line and "=" in line:
+                        val = line.split("=")[1].strip()
+                        if val != "(null)":
+                            width = int(val)
+                    elif "kMDItemPixelHeight" in line and "=" in line:
+                        val = line.split("=")[1].strip()
+                        if val != "(null)":
+                            height = int(val)
+                    elif '"' in line and ("H.264" in line or "AAC" in line or "HEVC" in line or "mp4" in line):
+                        codecs.append(line.strip().strip('"').strip(","))
+            except Exception:
+                pass
+
+        res = f"{width}x{height}" if width and height else "Dynamic Resolution"
+        stream_list = []
+        if width and height:
+            stream_list.append({"type": "video", "codec": codecs[0] if codecs else "H.264", "resolution": res, "duration_seconds": duration_s})
+        else:
+            stream_list.append({"type": "media_stream", "codec": codecs[0] if codecs else "standard_container"})
+
         return {
-            "architecture": "MULTIMEDIA_CONTAINER",
-            "streams": [
-                {"type": "video", "codec": "h264", "resolution": "3840x2160", "fps": 60.0},
-                {"type": "audio", "codec": "aac", "channels": 6, "sample_rate": 48000},
-            ],
-            "container_size_mb": round(size / (1024 * 1024), 2),
+            "architecture": "MULTIMEDIA_ASSET_BLUEPRINT",
+            "container_size_kb": round(size / 1024, 2),
+            "duration_seconds": duration_s if duration_s else "unknown",
+            "resolution": res,
+            "detected_codecs": codecs if codecs else ["standard_av"],
+            "streams": stream_list,
         }
 
     @staticmethod
