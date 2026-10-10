@@ -1,13 +1,21 @@
 ---
-title: Mreaia - Universal Zero-Token File Distillation
-emoji: 🪞
-colorFrom: indigo
-colorTo: purple
-sdk: gradio
-sdk_version: 5.20.0
-app_file: app.py
-pinned: false
+language:
+- en
+- ar
 license: other
+tags:
+- multimodal
+- zero-token
+- feature-extraction
+- speech-recognition
+- audio-processing
+- computer-vision
+- context-distillation
+- cryptography
+- privacy
+- ollama
+- llm-security
+pipeline_tag: feature-extraction
 ---
 
 <div align="center">
@@ -15,6 +23,8 @@ license: other
 # 🪞 Mreaia (مرآيا)
 ### Hardware-Locked, Exfiltration-Proof Blueprint Distillation for Local LLMs
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Gradio%20Online%20Cloud-orange?style=for-the-badge&logo=gradio)](https://573c4614bd503b9f71.gradio.live)
+[![Hugging Face Hub](https://img.shields.io/badge/Hugging%20Face-mostafaraafat91%2FMreaia-yellow?style=for-the-badge&logo=huggingface)](https://huggingface.co/mostafaraafat91/Mreaia)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge&logo=github-actions)](https://github.com)
 [![Security Architecture](https://img.shields.io/badge/DRM-Hardware--Locked-red?style=for-the-badge&logo=shield)](https://github.com)
 [![Cryptography](https://img.shields.io/badge/AES--256--GCM-PBKDF2--100k-blue?style=for-the-badge&logo=lock)](https://github.com)
