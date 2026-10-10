@@ -12,22 +12,25 @@ int main(int argc, const char * argv[]) {
         NSString *path = [NSString stringWithUTF8String:argv[1]];
         NSImage *image = [[NSImage alloc] initWithContentsOfFile:path];
         if (!image) {
-            printf("{\"faces_count\":0,\"faces\":[],\"detected_objects\":[]}\n");
+            printf("{\"faces_count\":0,\"faces\":[],\"detected_objects\":[],\"recognized_text\":\"\"}\n");
             return 0;
         }
         NSData *tiffData = [image TIFFRepresentation];
         CIImage *ciImage = [CIImage imageWithData:tiffData];
         if (!ciImage) {
-            printf("{\"faces_count\":0,\"faces\":[],\"detected_objects\":[]}\n");
+            printf("{\"faces_count\":0,\"faces\":[],\"detected_objects\":[],\"recognized_text\":\"\"}\n");
             return 0;
         }
 
         VNImageRequestHandler *handler = [[VNImageRequestHandler alloc] initWithCIImage:ciImage options:@{}];
         VNClassifyImageRequest *classifyReq = [[VNClassifyImageRequest alloc] init];
         VNDetectFaceLandmarksRequest *faceReq = [[VNDetectFaceLandmarksRequest alloc] init];
+        VNRecognizeTextRequest *textReq = [[VNRecognizeTextRequest alloc] init];
+        textReq.recognitionLevel = VNRequestTextRecognitionLevelAccurate;
+        textReq.usesLanguageCorrection = YES;
 
         NSError *error = nil;
-        [handler performRequests:@[classifyReq, faceReq] error:&error];
+        [handler performRequests:@[classifyReq, faceReq, textReq] error:&error];
 
         // 1. Process Objects & Scene Classes
         NSMutableArray *objects = [NSMutableArray array];
@@ -87,10 +90,21 @@ int main(int argc, const char * argv[]) {
             }];
         }
 
+        // 3. Process In-Image OCR Text Recognition
+        NSMutableArray *textLines = [NSMutableArray array];
+        for (VNRecognizedTextObservation *obs in textReq.results) {
+            VNRecognizedText *topCandidate = [[obs topCandidates:1] firstObject];
+            if (topCandidate && topCandidate.confidence > 0.3) {
+                [textLines addObject:topCandidate.string];
+            }
+        }
+        NSString *recognizedText = [textLines componentsJoinedByString:@"\n"];
+
         NSDictionary *output = @{
             @"faces_count": @(faces.count),
             @"faces": faces,
-            @"detected_objects": objects
+            @"detected_objects": objects,
+            @"recognized_text": recognizedText ?: @""
         };
 
         NSData *jsonData = [NSJSONSerialization dataWithJSONObject:output options:0 error:nil];

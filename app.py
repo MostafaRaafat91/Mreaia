@@ -218,6 +218,10 @@ def process_file(file_obj, query_prompt):
                 vision_md += "\n**Detected Objects & Scene Entities:**\n"
                 for obj in objects:
                     vision_md += f"- `{obj.get('name')}`: {obj.get('confidence', 0)*100:.0f}% confidence\n"
+
+            ocr_text = vision_info.get("extracted_text_ocr", "")
+            if ocr_text:
+                vision_md += f"\n**📝 In-Image Recognized Text (OCR):**\n```text\n{ocr_text}\n```\n"
         else:
             vision_md += "*No visual frames or vision processing not applicable for this file type.*\n"
 

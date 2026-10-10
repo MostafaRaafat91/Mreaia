@@ -304,41 +304,48 @@ class FileContentRouter:
         except Exception:
             return {"audio_detected": False}
 
-    @staticmethod
-    def _analyze_visual_semantics(file_path: str, duration_s: float) -> Dict[str, Any]:
-        """Extracts keyframe objects, human faces, and facial emotion landmarks."""
-        ffmpeg_bin = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
+    @classmethod
+    def _analyze_visual_semantics(cls, file_path: str, duration_s: float) -> Dict[str, Any]:
+        """Extracts objects, human faces, emotions, and in-image text using Apple Vision."""
         vision_bin = os.path.abspath(os.path.join(os.path.dirname(__file__), "bin", "mreaia_vision"))
-
-        if not os.path.exists(ffmpeg_bin) or not os.path.exists(vision_bin):
+        if not os.path.exists(vision_bin):
             return {"vision_available": False}
 
-        try:
+        ext = os.path.splitext(file_path)[1].lower()
+        is_static_image = ext in [".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff", ".heic"]
+
+        tmp_frame = None
+        if is_static_image:
+            target_path = file_path
+        else:
+            ffmpeg_bin = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
+            if not os.path.exists(ffmpeg_bin):
+                return {"vision_available": False}
             target_time = max(0.5, duration_s * 0.35)
             tmp_frame = f"/tmp/mreaia_f_{os.getpid()}.jpg"
-
             cmd_frame = [ffmpeg_bin, "-y", "-ss", str(target_time), "-i", file_path, "-vframes", "1", "-q:v", "2", tmp_frame]
             subprocess.run(cmd_frame, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=6)
-
             if not os.path.exists(tmp_frame):
                 return {"vision_available": False}
+            target_path = tmp_frame
 
-            proc_v = subprocess.Popen([vision_bin, tmp_frame], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        try:
+            proc_v = subprocess.Popen([vision_bin, target_path], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
             out_json, _ = proc_v.communicate(timeout=6)
-
-            if os.path.exists(tmp_frame):
-                os.remove(tmp_frame)
-
             res = json.loads(out_json.decode("utf-8")) if out_json else {}
             return {
                 "vision_available": True,
-                "keyframe_sample_sec": round(target_time, 1),
+                "is_static_image": is_static_image,
                 "faces_detected": res.get("faces_count", 0),
                 "faces": res.get("faces", []),
                 "objects_and_entities": res.get("detected_objects", []),
+                "extracted_text_ocr": res.get("recognized_text", ""),
             }
         except Exception:
             return {"vision_available": False}
+        finally:
+            if tmp_frame and os.path.exists(tmp_frame):
+                os.remove(tmp_frame)
 
     @staticmethod
     def _transcribe_speech_full(file_path: str) -> Dict[str, Any]:
@@ -421,10 +428,12 @@ class FileContentRouter:
         res = f"{width}x{height}" if width and height else "Dynamic Resolution"
         dur_val = duration_s if duration_s else 5.0
 
-        # Run vision, voice frequencies, and full speech transcription
+        ext = os.path.splitext(file_path)[1].lower() if file_path else ""
+        is_image = ext in [".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff", ".heic"]
+
         visual_intel = cls._analyze_visual_semantics(file_path, dur_val) if file_path else {}
-        audio_intel = cls._analyze_audio_frequencies(file_path) if file_path else {}
-        speech_intel = cls._transcribe_speech_full(file_path) if file_path else {}
+        audio_intel = {"audio_detected": False} if is_image else (cls._analyze_audio_frequencies(file_path) if file_path else {})
+        speech_intel = {"transcription_available": False} if is_image else (cls._transcribe_speech_full(file_path) if file_path else {})
 
         return {
             "architecture": "MULTIMODAL_MEDIA_ASSET_BLUEPRINT",
