@@ -21,15 +21,19 @@ LEGAL, ETHICAL & COMMERCIAL NOTICE:
 
 import os
 import sys
+import re
 import json
 import zlib
 import struct
 import shutil
+import zipfile
+import tarfile
 import hashlib
 import binascii
 import platform
 import argparse
 import subprocess
+import xml.etree.ElementTree as ET
 from typing import Dict, Any, List, Optional, Tuple, Union
 from datetime import datetime, timezone
 
@@ -178,13 +182,28 @@ class FileContentRouter:
                 sha256.update(chunk)
         digest = sha256.hexdigest()
 
-        if ext in [".xlsx", ".xls"] or b"workbook" in sample or b"[Content_Types].xml" in sample:
+        if ext == ".pdf":
+            category = "pdf_document"
+            blueprint = cls._extract_pdf(file_path, file_size)
+        elif ext in [".docx", ".doc"]:
+            category = "word_document"
+            blueprint = cls._extract_docx(file_path, file_size)
+        elif ext in [".pptx", ".ppt"]:
+            category = "presentation_document"
+            blueprint = cls._extract_pptx(file_path, file_size)
+        elif ext in [".zip", ".tar", ".gz", ".tgz", ".bz2", ".7z"]:
+            category = "archive_container"
+            blueprint = cls._extract_archive(file_path, file_size)
+        elif ext in [".txt", ".md", ".py", ".js", ".ts", ".html", ".css", ".json", ".yaml", ".yml", ".sh", ".c", ".cpp", ".h", ".rs", ".go", ".java"]:
+            category = "code_or_text_document"
+            blueprint = cls._extract_text_or_code(file_path, sample, file_size)
+        elif ext in [".xlsx", ".xls"] or (ext not in [".docx", ".pptx"] and (b"workbook" in sample or b"[Content_Types].xml" in sample)):
             category = "excel_dataset"
             blueprint = cls._extract_excel(sample, file_size)
         elif ext in [".sql", ".sqlite", ".db"] or b"CREATE TABLE" in sample or b"SQLite format" in sample:
             category = "sql_schema"
             blueprint = cls._extract_sql(sample, file_size)
-        elif ext in [".mp4", ".mkv", ".mp3", ".jpg", ".png", ".mov", ".webm"] or sample.startswith(b"\x89PNG") or sample.startswith(b"\xff\xd8") or b"ftyp" in sample[:16]:
+        elif ext in [".mp4", ".mkv", ".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".mov", ".webm", ".avi"] or sample.startswith(b"\x89PNG") or sample.startswith(b"\xff\xd8") or b"ftyp" in sample[:16]:
             category = "media_asset"
             blueprint = cls._extract_media(sample, file_size, file_path=file_path)
         elif ext in [".csv", ".tsv"]:
@@ -321,6 +340,55 @@ class FileContentRouter:
         except Exception:
             return {"vision_available": False}
 
+    @staticmethod
+    def _transcribe_speech_full(file_path: str) -> Dict[str, Any]:
+        """Extracts complete multilingual on-device speech transcript using whisper.cpp & Metal."""
+        whisper_bin = shutil.which("whisper-cli") or "/opt/homebrew/bin/whisper-cli"
+        ffmpeg_bin = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
+        model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "models", "ggml-tiny.bin"))
+
+        if not os.path.exists(whisper_bin) or not os.path.exists(model_path) or not os.path.exists(ffmpeg_bin):
+            return {"transcription_available": False}
+
+        tmp_wav = f"/tmp/mreaia_speech_{os.getpid()}.wav"
+        try:
+            cmd_wav = [ffmpeg_bin, "-y", "-i", file_path, "-vn", "-ac", "1", "-ar", "16000", tmp_wav]
+            subprocess.run(cmd_wav, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+
+            if not os.path.exists(tmp_wav) or os.path.getsize(tmp_wav) < 2000:
+                return {"transcription_available": False, "reason": "No audio stream found"}
+
+            cmd_whisper = [whisper_bin, "-m", model_path, "-f", tmp_wav, "-nt"]
+            proc = subprocess.Popen(cmd_whisper, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            out_bytes, _ = proc.communicate(timeout=30)
+            out_text = out_bytes.decode("utf-8", errors="ignore")
+
+            lines = out_text.splitlines()
+            transcript_lines = []
+            capturing = False
+            for line in lines:
+                if "main: processing" in line or "system_info:" in line:
+                    capturing = True
+                    continue
+                if "whisper_print_timings:" in line or "ggml_metal_free" in line:
+                    capturing = False
+                    continue
+                if capturing and line.strip() and not line.startswith("whisper_") and not line.startswith("load_"):
+                    transcript_lines.append(line.strip())
+
+            full_transcript = " ".join(transcript_lines).strip()
+            return {
+                "transcription_available": True,
+                "engine": "whisper.cpp (Apple Silicon Metal)",
+                "full_spoken_transcript": full_transcript if full_transcript else "No vocal speech detected",
+                "character_count": len(full_transcript),
+            }
+        except Exception as e:
+            return {"transcription_available": False, "error": str(e)}
+        finally:
+            if os.path.exists(tmp_wav):
+                os.remove(tmp_wav)
+
     @classmethod
     def _extract_media(cls, sample: bytes, size: int, file_path: Optional[str] = None) -> Dict[str, Any]:
         duration_s = None
@@ -353,9 +421,10 @@ class FileContentRouter:
         res = f"{width}x{height}" if width and height else "Dynamic Resolution"
         dur_val = duration_s if duration_s else 5.0
 
-        # Run vision and audio frequency intelligence if file is local
+        # Run vision, voice frequencies, and full speech transcription
         visual_intel = cls._analyze_visual_semantics(file_path, dur_val) if file_path else {}
         audio_intel = cls._analyze_audio_frequencies(file_path) if file_path else {}
+        speech_intel = cls._transcribe_speech_full(file_path) if file_path else {}
 
         return {
             "architecture": "MULTIMODAL_MEDIA_ASSET_BLUEPRINT",
@@ -363,9 +432,105 @@ class FileContentRouter:
             "duration_seconds": duration_s if duration_s else "unknown",
             "resolution": res,
             "detected_codecs": codecs if codecs else ["standard_av"],
+            "speech_transcript_intelligence": speech_intel,
             "visual_scene_intelligence": visual_intel,
             "audio_frequency_profile": audio_intel,
         }
+
+    @staticmethod
+    def _extract_pdf(file_path: str, size: int) -> Dict[str, Any]:
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(file_path)
+            total_pages = len(reader.pages)
+            text_chunks = []
+            for i in range(min(total_pages, 50)):
+                page_txt = reader.pages[i].extract_text() or ""
+                if page_txt.strip():
+                    text_chunks.append(f"--- Page {i+1} ---\n{page_txt.strip()}")
+            full_text = "\n\n".join(text_chunks)
+            return {
+                "architecture": "PDF_DOCUMENT_BLUEPRINT",
+                "total_pages": total_pages,
+                "pages_sampled": min(total_pages, 50),
+                "total_extracted_characters": len(full_text),
+                "document_text_content": full_text[:4000] + ("\n... [TRUNCATED]" if len(full_text) > 4000 else ""),
+            }
+        except Exception as e:
+            return {"architecture": "PDF_DOCUMENT_BLUEPRINT", "error": str(e)}
+
+    @staticmethod
+    def _extract_docx(file_path: str, size: int) -> Dict[str, Any]:
+        try:
+            with zipfile.ZipFile(file_path) as z:
+                xml_data = z.read("word/document.xml")
+                tree = ET.fromstring(xml_data)
+                text = "".join(tree.itertext()).strip()
+            return {
+                "architecture": "WORD_DOCUMENT_BLUEPRINT",
+                "total_extracted_characters": len(text),
+                "document_text_content": text[:4000] + ("\n... [TRUNCATED]" if len(text) > 4000 else ""),
+            }
+        except Exception as e:
+            return {"architecture": "WORD_DOCUMENT_BLUEPRINT", "error": str(e)}
+
+    @staticmethod
+    def _extract_pptx(file_path: str, size: int) -> Dict[str, Any]:
+        try:
+            with zipfile.ZipFile(file_path) as z:
+                slides = [f for f in z.namelist() if f.startswith("ppt/slides/slide") and f.endswith(".xml")]
+                slide_data = []
+                for s in sorted(slides):
+                    xml_content = z.read(s)
+                    tree = ET.fromstring(xml_content)
+                    txt = " ".join(tree.itertext()).strip()
+                    if txt:
+                        slide_num = re.search(r"slide(\d+)\.xml", s)
+                        num_str = slide_num.group(1) if slide_num else s
+                        slide_data.append({"slide": f"Slide {num_str}", "content": txt})
+            return {
+                "architecture": "PRESENTATION_DECK_BLUEPRINT",
+                "total_slides": len(slides),
+                "slides_content": slide_data,
+            }
+        except Exception as e:
+            return {"architecture": "PRESENTATION_DECK_BLUEPRINT", "error": str(e)}
+
+    @staticmethod
+    def _extract_archive(file_path: str, size: int) -> Dict[str, Any]:
+        entries = []
+        try:
+            if zipfile.is_zipfile(file_path):
+                with zipfile.ZipFile(file_path) as z:
+                    for info in z.infolist()[:60]:
+                        entries.append({"name": info.filename, "size": info.file_size, "is_dir": info.is_dir()})
+            elif tarfile.is_tarfile(file_path):
+                with tarfile.open(file_path) as t:
+                    for m in t.getmembers()[:60]:
+                        entries.append({"name": m.name, "size": m.size, "is_dir": m.isdir()})
+            return {
+                "architecture": "ARCHIVE_CONTAINER_BLUEPRINT",
+                "manifest_entries_count": len(entries),
+                "file_tree_manifest": entries,
+            }
+        except Exception as e:
+            return {"architecture": "ARCHIVE_CONTAINER_BLUEPRINT", "error": str(e)}
+
+    @staticmethod
+    def _extract_text_or_code(file_path: str, sample: bytes, size: int) -> Dict[str, Any]:
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read(64000)
+            lines = content.splitlines()
+            defs = [line.strip() for line in lines if line.strip().startswith(("def ", "class ", "function ", "export ", "const ", "struct ", "type "))][:25]
+            return {
+                "architecture": "CODE_OR_TEXT_DOCUMENT_BLUEPRINT",
+                "total_lines_estimated": len(lines),
+                "structural_symbols_found": defs,
+                "preview_text": content[:3000] + ("\n... [TRUNCATED]" if len(content) > 3000 else ""),
+            }
+        except Exception as e:
+            return {"architecture": "CODE_OR_TEXT_DOCUMENT_BLUEPRINT", "error": str(e)}
 
     @staticmethod
     def _extract_tabular(sample: bytes, size: int) -> Dict[str, Any]:
