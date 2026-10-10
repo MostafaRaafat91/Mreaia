@@ -6,7 +6,8 @@ Implements strict Hardware Node-Locking & Source-File Cryptographic Binding (Zer
 Encrypted blueprints (.ghost) are mathematically bound to the host machine's hardware UUID and the
 exact cryptographic digest of the source dataset. Plaintext blueprints exist strictly in volatile RAM.
 
-Author: Autonomous AI Engineering Swarm (Antigravity Technology)
+Conceived & Directed by: Project Creator & Visionary
+Architected & Engineered by: Autonomous AI Cyber-Security Swarm (Antigravity Technology)
 License: Mreaia Non-Commercial Source-Available License (Commercial Rights Exclusively Reserved)
 
 LEGAL, ETHICAL & COMMERCIAL NOTICE:

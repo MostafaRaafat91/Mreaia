@@ -10,6 +10,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.14-blue?style=for-the-badge&logo=python)](https://python.org)
 [![License: Non-Commercial](https://img.shields.io/badge/License-Non--Commercial-red.svg?style=for-the-badge)](LICENSE)
 [![Commercial: Author Reserved](https://img.shields.io/badge/Commercial%20Monetization-Author%20Reserved-yellow?style=for-the-badge&logo=shield)](LICENSE)
+[![Engineered with Antigravity](https://img.shields.io/badge/Engineered%20with-Antigravity%20Autonomous%20AI%20Swarm-8A2BE2?style=for-the-badge&logo=openai)](https://github.com)
 
 <p align="center">
   <b>Turn multi-gigabyte enterprise datasets into sub-kilobyte, cryptographically air-gapped blueprints.</b><br>
@@ -180,8 +181,24 @@ OK
 
 ---
 
+## 🤝 Transparency & Authorship / الشفافية ونسبة الفضل والابتكار
+
+> [!NOTE]
+> ### بيان الشفافية والابتكار / Transparency & Engineering Statement
+>
+> **العربية:**
+> * **صاحب الرؤية والابتكار (Visionary & Concept Owner):** تم ابتكار وتحديد الفكرة المعمارية الكاملة لنظام **Mreaia** وتوجيه فلسفة "القفل العتادي والربط التشفيري بالمصدر لمنع تسريب بيانات النماذج اللغوية" بواسطة **مالك ومبتكر المشروع**.
+> * **الهندسة والتطوير والتنفيذ (Autonomous AI Swarm Execution):** تم بناء، وهندسة الأكواد، وتصميم طبقات التشفير، وإجراء اختبارات الجودة والاختراق الشاملة آلياً بواسطة **سرب الذكاء الاصطناعي البرمجي المستقل (Autonomous AI Engineering Swarm)** المدعوم بتقنية **Google Antigravity**.
+>
+> **English:**
+> * **Conceived & Directed by:** The architectural concept, core zero-token premise, and hardware-locking vision of **Mreaia** were conceived, directed, and specified by the **Project Creator & Owner**.
+> * **Architected & Built with:** Fully engineered, coded, tested, and audited in a single execution run by an **Autonomous AI Cyber-Security & Software Engineering Swarm** powered by **Google DeepMind Antigravity Technology**.
+
+---
+
 ## 📄 License
 
 Distributed under the **Mreaia Source-Available Non-Commercial License** (Commercial rights exclusively reserved to the author). See [`LICENSE`](LICENSE) for full legal text.
+
 
 
