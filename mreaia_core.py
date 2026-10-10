@@ -7,12 +7,15 @@ Encrypted blueprints (.ghost) are mathematically bound to the host machine's har
 exact cryptographic digest of the source dataset. Plaintext blueprints exist strictly in volatile RAM.
 
 Author: Autonomous AI Engineering Swarm (Antigravity Technology)
-License: MIT
+License: Mreaia Non-Commercial Source-Available License (Commercial Rights Exclusively Reserved)
 
-LEGAL & ETHICAL DISCLAIMER:
-This software is intended strictly for authorized, defensive, educational, and
-legitimate privacy-preserving research. The authors explicitly disclaim all liability
-and responsibility for any unlawful, prohibited, or unauthorized use of this codebase.
+LEGAL, ETHICAL & COMMERCIAL NOTICE:
+1. This software is intended strictly for authorized, defensive, educational, and
+   legitimate privacy-preserving research.
+2. The authors explicitly disclaim all liability and responsibility for any unlawful,
+   prohibited, or unauthorized use of this codebase.
+3. Commercial utilization, resale, SaaS hosting, or monetization by third parties is
+   strictly prohibited without an executed commercial license from the author.
 """
 
 import os

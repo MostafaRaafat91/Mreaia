@@ -8,7 +8,8 @@
 [![Cryptography](https://img.shields.io/badge/AES--256--GCM-PBKDF2--100k-blue?style=for-the-badge&logo=lock)](https://github.com)
 [![Compression Ratio](https://img.shields.io/badge/compression->99.9%25-orange?style=for-the-badge&logo=databricks)](https://github.com)
 [![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.14-blue?style=for-the-badge&logo=python)](https://python.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![License: Non-Commercial](https://img.shields.io/badge/License-Non--Commercial-red.svg?style=for-the-badge)](LICENSE)
+[![Commercial: Author Reserved](https://img.shields.io/badge/Commercial%20Monetization-Author%20Reserved-yellow?style=for-the-badge&logo=shield)](LICENSE)
 
 <p align="center">
   <b>Turn multi-gigabyte enterprise datasets into sub-kilobyte, cryptographically air-gapped blueprints.</b><br>
@@ -162,7 +163,25 @@ OK
 
 ---
 
+## 💼 Commercial Rights & Monetization Policy / حقوق التربح والاستخدام التجاري الحصرية
+
+> [!IMPORTANT]
+> ### حصر حقوق التربح والاستخدام التجاري بالمالك / Exclusive Commercial Rights Reserved
+>
+> **العربية:**
+> * **الاستخدام الشخصي والأكاديمي:** مجاني ومفتوح للمعاينة والدراسة والبحث والتطوير الفردي غير الربحي.
+> * **حظر التربح والبيع:** يُحظر حظراً تاماً وقاطعاً على أي فرد، شركة، أو مؤسسة بيع هذا البرنامج، أو إعادة توزيعه بمقابل مالي، أو تأجيره، أو تقديمه كخدمة مدفوعة سحابية (SaaS / API)، أو استخدامه للتربح التجاري المباشر أو غير المباشر دون ترخيص تجاري رسمي ومكتوب وموقع من صاحب المشروع شخصياً.
+> * **طلب التراخيص التجارية (Commercial Licensing):** للشركات والمؤسسات الراغبة في استخدام نظام Mreaia ضمن بنيتها التحتية التجارية، يرجى التواصل مع مالك المستودع لشراء ترخيص تجاري معتمد.
+>
+> **English:**
+> * **Personal & Academic Use:** Free for inspection, education, and non-commercial research.
+> * **Strict Commercial Restriction:** Commercial exploitation, re-selling, sublicensing, hosting as a paid service (SaaS), or utilizing this software for commercial monetary gain is strictly reserved for the author. Any commercial use without an explicit, signed commercial license agreement is strictly prohibited and subject to intellectual property enforcement.
+> * **Commercial Inquiries:** Contact the repository owner directly to negotiate and obtain commercial deployment licenses.
+
+---
+
 ## 📄 License
 
-Distributed under the [MIT License](LICENSE). Copyright (c) 2026 Mreaia Contributors.
+Distributed under the **Mreaia Source-Available Non-Commercial License** (Commercial rights exclusively reserved to the author). See [`LICENSE`](LICENSE) for full legal text.
+
 
