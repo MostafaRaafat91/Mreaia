@@ -24,6 +24,7 @@ import sys
 import json
 import zlib
 import struct
+import shutil
 import hashlib
 import binascii
 import platform
@@ -235,7 +236,93 @@ class FileContentRouter:
         }
 
     @staticmethod
-    def _extract_media(sample: bytes, size: int, file_path: Optional[str] = None) -> Dict[str, Any]:
+    def _analyze_audio_frequencies(file_path: str) -> Dict[str, Any]:
+        """Analyzes vocal pitch, frequency bands, and acoustic dynamics using native FFT."""
+        ffmpeg_bin = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
+        if not os.path.exists(ffmpeg_bin):
+            return {"audio_detected": False}
+
+        try:
+            cmd = [ffmpeg_bin, "-y", "-i", file_path, "-vn", "-ac", "1", "-ar", "16000", "-f", "s16le", "-t", "4", "-"]
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            raw_pcm, _ = proc.communicate(timeout=6)
+
+            if not raw_pcm or len(raw_pcm) < 3200:
+                return {"audio_detected": False}
+
+            import numpy as np
+            samples = np.frombuffer(raw_pcm, dtype=np.int16).astype(np.float32)
+            fft_vals = np.abs(np.fft.rfft(samples))
+            freqs = np.fft.rfftfreq(len(samples), 1.0 / 16000)
+
+            vocal_mask = (freqs >= 80) & (freqs <= 320)
+            if np.any(vocal_mask):
+                peak_idx = np.argmax(fft_vals[vocal_mask])
+                f0_pitch = float(freqs[vocal_mask][peak_idx])
+            else:
+                f0_pitch = 125.0
+
+            bass_e = float(np.sum(fft_vals[freqs < 300] ** 2))
+            vocal_e = float(np.sum(fft_vals[(freqs >= 300) & (freqs <= 3400)] ** 2))
+            treble_e = float(np.sum(fft_vals[freqs > 3400] ** 2))
+            total_e = bass_e + vocal_e + treble_e + 1e-6
+
+            rms = np.sqrt(np.mean(samples ** 2))
+            rms_db = round(float(20 * np.log10(max(rms, 1.0) / 32767.0)), 1)
+            vocal_reg = "baritone_bass_deep_male" if f0_pitch < 165 else "tenor_female_soprano"
+
+            return {
+                "audio_detected": True,
+                "fundamental_vocal_pitch_hz": round(f0_pitch, 1),
+                "vocal_register": vocal_reg,
+                "rms_loudness_dbfs": rms_db,
+                "frequency_bands": {
+                    "bass_sub_300hz_pct": round((bass_e / total_e) * 100.0, 1),
+                    "speech_clarity_300_3400hz_pct": round((vocal_e / total_e) * 100.0, 1),
+                    "treble_air_above_3400hz_pct": round((treble_e / total_e) * 100.0, 1),
+                },
+            }
+        except Exception:
+            return {"audio_detected": False}
+
+    @staticmethod
+    def _analyze_visual_semantics(file_path: str, duration_s: float) -> Dict[str, Any]:
+        """Extracts keyframe objects, human faces, and facial emotion landmarks."""
+        ffmpeg_bin = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
+        vision_bin = os.path.abspath(os.path.join(os.path.dirname(__file__), "bin", "mreaia_vision"))
+
+        if not os.path.exists(ffmpeg_bin) or not os.path.exists(vision_bin):
+            return {"vision_available": False}
+
+        try:
+            target_time = max(0.5, duration_s * 0.35)
+            tmp_frame = f"/tmp/mreaia_f_{os.getpid()}.jpg"
+
+            cmd_frame = [ffmpeg_bin, "-y", "-ss", str(target_time), "-i", file_path, "-vframes", "1", "-q:v", "2", tmp_frame]
+            subprocess.run(cmd_frame, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=6)
+
+            if not os.path.exists(tmp_frame):
+                return {"vision_available": False}
+
+            proc_v = subprocess.Popen([vision_bin, tmp_frame], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            out_json, _ = proc_v.communicate(timeout=6)
+
+            if os.path.exists(tmp_frame):
+                os.remove(tmp_frame)
+
+            res = json.loads(out_json.decode("utf-8")) if out_json else {}
+            return {
+                "vision_available": True,
+                "keyframe_sample_sec": round(target_time, 1),
+                "faces_detected": res.get("faces_count", 0),
+                "faces": res.get("faces", []),
+                "objects_and_entities": res.get("detected_objects", []),
+            }
+        except Exception:
+            return {"vision_available": False}
+
+    @classmethod
+    def _extract_media(cls, sample: bytes, size: int, file_path: Optional[str] = None) -> Dict[str, Any]:
         duration_s = None
         width = None
         height = None
@@ -264,19 +351,20 @@ class FileContentRouter:
                 pass
 
         res = f"{width}x{height}" if width and height else "Dynamic Resolution"
-        stream_list = []
-        if width and height:
-            stream_list.append({"type": "video", "codec": codecs[0] if codecs else "H.264", "resolution": res, "duration_seconds": duration_s})
-        else:
-            stream_list.append({"type": "media_stream", "codec": codecs[0] if codecs else "standard_container"})
+        dur_val = duration_s if duration_s else 5.0
+
+        # Run vision and audio frequency intelligence if file is local
+        visual_intel = cls._analyze_visual_semantics(file_path, dur_val) if file_path else {}
+        audio_intel = cls._analyze_audio_frequencies(file_path) if file_path else {}
 
         return {
-            "architecture": "MULTIMEDIA_ASSET_BLUEPRINT",
+            "architecture": "MULTIMODAL_MEDIA_ASSET_BLUEPRINT",
             "container_size_kb": round(size / 1024, 2),
             "duration_seconds": duration_s if duration_s else "unknown",
             "resolution": res,
             "detected_codecs": codecs if codecs else ["standard_av"],
-            "streams": stream_list,
+            "visual_scene_intelligence": visual_intel,
+            "audio_frequency_profile": audio_intel,
         }
 
     @staticmethod
