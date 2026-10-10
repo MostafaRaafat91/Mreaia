@@ -145,6 +145,24 @@ OK
 
 ---
 
+## ⚖️ Legal Disclaimer & Acceptable Use Policy / إخلاء المسؤولية القانونية والأخلاقية
+
+> [!WARNING]
+> ### تنبيه قانوني وأخلاقي هام / Critical Legal & Ethical Notice
+> 
+> **العربية:**
+> تم تطوير مشروع **Mreaia (مرآيا)** لأغراض البحث العلمي، والأمان السيبراني الدفاعي، وحماية خصوصية البيانات، وتسهيل التعامل مع النماذج اللغوية في بيئات العمل القانونية والمصرح بها فقط. 
+> * **إبراء الذمة المطلق:** يخلي المطورون والمساهمون في هذا المشروع مسؤوليتهم القانونية، المدنية، والجنائية والأخلاقية إخلاءً تاماً ومطلقاً من أي استخدام لهذا البرنامج أو الأكواد البرمجية المرتبطة به في أي أنشطة محرمة، غير قانونية، ضارة، أو تخالف الشريعة الإسلامية والقوانين والتشريعات المحلية والدولية (بما في ذلك القرصنة، التجسس، التعدي على حقوق الملكية الفكرية، أو تداول ومعالجة البيانات المحظورة).
+> * يتحمل المستخدم بمفرده المسؤولية الكاملة والنهائية عن كيفية ونوعية البيانات التي يعالجها أو يشفرها باستخدام هذه الأداة.
+>
+> **English:**
+> **Mreaia** is engineered strictly for educational, defensive cyber-security research, privacy preservation, and legitimate enterprise data engineering workflows.
+> * **Absolute Disclaimer of Liability:** The creators and contributors expressly disclaim any and all liability, legal responsibility, and warranty for any unlawful, illegal, unauthorized, infringing, malicious, or prohibited usage of this tool or its source code.
+> * Users are solely and exclusively responsible for ensuring that their utilization of this software complies with all applicable local, national, and international laws, regulations, and ethical guidelines.
+
+---
+
 ## 📄 License
 
 Distributed under the [MIT License](LICENSE). Copyright (c) 2026 Mreaia Contributors.
+

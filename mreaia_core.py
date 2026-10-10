@@ -8,6 +8,11 @@ exact cryptographic digest of the source dataset. Plaintext blueprints exist str
 
 Author: Autonomous AI Engineering Swarm (Antigravity Technology)
 License: MIT
+
+LEGAL & ETHICAL DISCLAIMER:
+This software is intended strictly for authorized, defensive, educational, and
+legitimate privacy-preserving research. The authors explicitly disclaim all liability
+and responsibility for any unlawful, prohibited, or unauthorized use of this codebase.
 """
 
 import os
