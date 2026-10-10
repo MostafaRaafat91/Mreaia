@@ -1,7 +1,12 @@
 ---
-language:
-- en
-- ar
+title: Mreaia - Universal Zero-Token File Engine
+emoji: 🪞
+colorFrom: indigo
+colorTo: purple
+sdk: gradio
+sdk_version: 5.20.0
+app_file: app.py
+pinned: false
 license: other
 tags:
 - multimodal
