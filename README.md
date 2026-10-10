@@ -1,3 +1,15 @@
+---
+title: Mreaia (مرآيا) - Universal Zero-Token File Distillation
+emoji: 🪞
+colorFrom: indigo
+colorTo: purple
+sdk: gradio
+sdk_version: 5.20.0
+app_file: app.py
+pinned: false
+license: other
+---
+
 <div align="center">
 
 # 🪞 Mreaia (مرآيا)

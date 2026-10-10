@@ -21,6 +21,11 @@ __pycache__/
 *.so
 .pytest_cache/
 
+# Build & Packaging
+build/
+dist/
+*.egg-info/
+
 # OS Specific
 .DS_Store
 Thumbs.db
