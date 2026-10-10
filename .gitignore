@@ -1,0 +1,26 @@
+# Cryptographic Keys & Local Credentials
+secret.key
+*.key
+*.pem
+.env
+
+# Ghost Artifacts & Raw Datasets
+*.ghost
+*.dat
+*.bin
+*.sqlite
+*.db
+
+# Python Virtual Environments & Bytecode
+.venv/
+env/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# OS Specific
+.DS_Store
+Thumbs.db
